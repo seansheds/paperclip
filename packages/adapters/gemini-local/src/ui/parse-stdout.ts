@@ -58,7 +58,7 @@ function collectTextEntries(messageRaw: unknown, ts: string, kind: "assistant" |
   if (!message) return [];
 
   const entries: TranscriptEntry[] = [];
-  const directText = asString(message.text).trim();
+  const directText = (asString(message.text) || asString(message.content)).trim();
   if (directText) entries.push({ kind, ts, text: directText });
 
   const content = Array.isArray(message.content) ? message.content : [];
@@ -84,7 +84,7 @@ function parseAssistantMessage(messageRaw: unknown, ts: string): TranscriptEntry
   if (!message) return [];
 
   const entries: TranscriptEntry[] = [];
-  const directText = asString(message.text).trim();
+  const directText = (asString(message.text) || asString(message.content)).trim();
   if (directText) entries.push({ kind: "assistant", ts, text: directText });
 
   const content = Array.isArray(message.content) ? message.content : [];
@@ -215,6 +215,16 @@ export function parseGeminiStdoutLine(line: string, ts: string): TranscriptEntry
   }
 
   const type = asString(parsed.type);
+
+  if (type === "message") {
+    const role = asString(parsed.role).trim();
+    if (role === "assistant") {
+      return parseAssistantMessage(parsed, ts);
+    } else if (role === "user") {
+      return collectTextEntries(parsed, ts, "user");
+    }
+    return [];
+  }
 
   if (type === "system") {
     const subtype = asString(parsed.subtype);

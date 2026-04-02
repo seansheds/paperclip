@@ -37,9 +37,10 @@ const CURSOR_FALLBACK_MODEL_IDS = [
   "sonnet-4.6-thinking",
   "sonnet-4.5",
   "sonnet-4.5-thinking",
-  "gemini-3.1-pro",
-  "gemini-3-pro",
-  "gemini-3-flash",
+  "gemini-3.1-pro-preview",
+  "gemini-3-pro-preview",
+  "gemini-3-flash-preview",
+  "gemini-3.1-flash-lite-preview",
   "grok",
   "kimi-k2.5",
 ];

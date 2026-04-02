@@ -50,7 +50,7 @@ function printTextMessage(prefix: string, colorize: (text: string) => string, me
   const message = asRecord(messageRaw);
   if (!message) return;
 
-  const directText = asString(message.text).trim();
+  const directText = (asString(message.text) || asString(message.content)).trim();
   if (directText) console.log(colorize(`${prefix}: ${directText}`));
 
   const content = Array.isArray(message.content) ? message.content : [];
@@ -119,6 +119,16 @@ export function printGeminiStreamEvent(raw: string, _debug: boolean): void {
   }
 
   const type = asString(parsed.type);
+
+  if (type === "message") {
+    const role = asString(parsed.role).trim();
+    if (role === "assistant") {
+      printTextMessage("assistant", pc.green, parsed);
+    } else if (role === "user") {
+      printTextMessage("user", pc.gray, parsed);
+    }
+    return;
+  }
 
   if (type === "system") {
     const subtype = asString(parsed.subtype);

@@ -7,7 +7,7 @@ function collectMessageText(message: unknown): string[] {
   }
 
   const record = parseObject(message);
-  const direct = asString(record.text, "").trim();
+  const direct = (asString(record.text, "") || asString(record.content, "")).trim();
   const lines: string[] = direct ? [direct] : [];
   const content = Array.isArray(record.content) ? record.content : [];
 
@@ -64,7 +64,7 @@ function accumulateUsage(
   );
   target.cachedInputTokens += asNumber(
     source.cached_input_tokens,
-    asNumber(source.cachedInputTokens, asNumber(source.cachedContentTokenCount, 0)),
+    asNumber(source.cachedInputTokens, asNumber(source.cachedContentTokenCount, asNumber(source.cached, 0))),
   );
   target.outputTokens += asNumber(
     source.output_tokens,
@@ -97,6 +97,14 @@ export function parseGeminiJsonl(stdout: string) {
 
     const type = asString(event.type, "").trim();
 
+    if (type === "message") {
+      const role = asString(event.role, "").trim();
+      if (role === "assistant") {
+        messages.push(...collectMessageText(event));
+      }
+      continue;
+    }
+
     if (type === "assistant") {
       messages.push(...collectMessageText(event.message));
       const messageObj = parseObject(event.message);
@@ -123,7 +131,7 @@ export function parseGeminiJsonl(stdout: string) {
 
     if (type === "result") {
       resultEvent = event;
-      accumulateUsage(usage, event.usage ?? event.usageMetadata);
+      accumulateUsage(usage, event.usage ?? event.usageMetadata ?? event.stats);
       const resultText =
         asString(event.result, "").trim() ||
         asString(event.text, "").trim() ||
@@ -161,7 +169,7 @@ export function parseGeminiJsonl(stdout: string) {
     }
 
     if (type === "step_finish" || event.usage || event.usageMetadata) {
-      accumulateUsage(usage, event.usage ?? event.usageMetadata);
+      accumulateUsage(usage, event.usage ?? event.usageMetadata ?? event.stats);
       costUsd = asNumber(event.total_cost_usd, asNumber(event.cost_usd, asNumber(event.cost, costUsd ?? 0))) || costUsd;
       continue;
     }
